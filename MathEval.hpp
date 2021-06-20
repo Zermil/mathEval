@@ -24,7 +24,7 @@ namespace MathEval {
 
   // Functions
   std::string ltrim(const std::string& s);
-  inline bool isOperator(const char& c);
+  inline bool isOperator(char c);
   inline bool isNumber(const std::string& value);
   std::string nextToken(std::string& source);
   std::vector<std::string> tokenize(std::string& expression);
@@ -37,7 +37,7 @@ namespace MathEval {
     return s.substr(start);
   }
 
-  inline bool isOperator(const char& c) {
+  inline bool isOperator(char c) {
     return std::find(std::begin(OPERATORS), std::end(OPERATORS), c) != std::end(OPERATORS);
   }
 
@@ -81,13 +81,7 @@ namespace MathEval {
     std::vector<std::string> tokens;
 
     for (std::string token = nextToken(expression); token != ""; token = nextToken(expression)) {
-      if (isNumber(token)) {
-        tokens.push_back("NUMBER");
-      } else if (isOperator(token[0])) {
-        tokens.push_back("OPERATOR");
-      } else {
-        tokens.push_back("BAD TOKEN");
-      }
+      tokens.push_back(token);
     }
 
     return tokens;
