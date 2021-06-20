@@ -40,9 +40,9 @@ namespace MathEval {
 
   // Functions (wrappers and utilities)
   std::string ltrim(const std::string& s);
-  inline bool isOperator(char c);
+  inline bool isOperator(const char c);
   inline bool isNumber(const std::string& value);
-  inline bool isNumber(const char& c);
+  inline bool isNumber(const char c);
   std::vector<std::string> tokenize(std::string& expression);
 
 
@@ -53,7 +53,7 @@ namespace MathEval {
     return s.substr(start);
   }
 
-  inline bool isOperator(char c) {
+  inline bool isOperator(const char c) {
     for (const Operator& op : OPERATORS) {
       if (op.identifier == c) {
         return true;
@@ -63,7 +63,7 @@ namespace MathEval {
     return false;
   }
 
-  inline bool isNumber(const char& c) {
+  inline bool isNumber(const char c) {
     if (!(c >= '0' && c <= '9')) {
       return false;
     }
@@ -89,7 +89,20 @@ namespace MathEval {
     source = ltrim(source);
     std::string token = source;
 
-    // Hangle negative numbers
+    if (source[0] == '(') {
+      allowNegative_ = true;
+
+      token = source[0];
+      source = source.substr(1);
+
+      return token;
+    } else if (source[0] == ')') {
+      token = source[0];
+      source = source.substr(1);
+
+      return token;
+    }
+
     if (source[0] == '-' && allowNegative_) {
       allowNegative_ = false;
       
@@ -108,7 +121,7 @@ namespace MathEval {
       return token;
     } else {
       for (size_t i = 0; i < source.length(); ++i) {
-        if (isOperator(source[i]) || source[i] == ' ') {
+        if (isOperator(source[i]) || source[i] == ' ' || source[i] == '(' || source[i] == ')') {
           token = source.substr(0, i);
           source = source.substr(i);
           allowNegative_ = false;
