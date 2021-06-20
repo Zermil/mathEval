@@ -8,7 +8,9 @@ int main(int argc, char* argv[])
     "1 + 2 * 3",
     "2 * 3 + 1",
     "-123 + 3",
-    "-123 - 3"
+    "-123 - 3",
+    "123- 3",
+    "123-3"
   };
 
   for (std::string& exp : EXPRESSIONS) {

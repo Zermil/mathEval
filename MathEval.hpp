@@ -12,6 +12,14 @@ namespace MathEval {
     int precedence;
   };
 
+  class Tokenizer {
+  public:
+    std::string getNextToken(std::string& source);
+
+  private:
+    bool allowNegative_ = true;
+  };
+
   const Operator OPERATORS[] = {
     { '+', 0 },
     { '-', 0 },
@@ -30,11 +38,11 @@ namespace MathEval {
     BAD_TOKEN,
   };
 
-  // Functions
+  // Functions (wrappers and utilities)
   std::string ltrim(const std::string& s);
   inline bool isOperator(char c);
   inline bool isNumber(const std::string& value);
-  std::string nextToken(std::string& source);
+  inline bool isNumber(const char& c);
   std::vector<std::string> tokenize(std::string& expression);
 
 
@@ -55,6 +63,14 @@ namespace MathEval {
     return false;
   }
 
+  inline bool isNumber(const char& c) {
+    if (!(c >= '0' && c <= '9')) {
+      return false;
+    }
+
+    return true;
+  }
+
   inline bool isNumber(const std::string& value) {
     for (const char& c : value) {
       if (!(c >= '0' && c <= '9')) {
@@ -65,7 +81,7 @@ namespace MathEval {
     return true;
   }
 
-  std::string nextToken(std::string& source) {
+  std::string Tokenizer::getNextToken(std::string& source) {
     if (source == "") {
       return "";
     }
@@ -73,15 +89,30 @@ namespace MathEval {
     source = ltrim(source);
     std::string token = source;
 
+    // Hangle negative numbers
+    if (source[0] == '-' && allowNegative_) {
+      allowNegative_ = false;
+      
+      size_t stop;
+      for (stop = 1; isNumber(source[stop]); ++stop); 
+      
+      token = source.substr(0, stop);
+      source = source.substr(stop);
+      return token;
+    }
+    
     if (isOperator(source[0])) {
       token = source[0];
       source = source.substr(1);
+
       return token;
     } else {
       for (size_t i = 0; i < source.length(); ++i) {
         if (isOperator(source[i]) || source[i] == ' ') {
           token = source.substr(0, i);
           source = source.substr(i);
+          allowNegative_ = false;
+
           return token;
         }
       }
@@ -92,9 +123,10 @@ namespace MathEval {
   }
 
   std::vector<std::string> tokenize(std::string& expression) {
+    Tokenizer tokenizer;
     std::vector<std::string> tokens;
 
-    for (std::string token = nextToken(expression); token != ""; token = nextToken(expression)) {
+    for (std::string token = tokenizer.getNextToken(expression); token != ""; token = tokenizer.getNextToken(expression)) {
       tokens.push_back(token);
     }
 
