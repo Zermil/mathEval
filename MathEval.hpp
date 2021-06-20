@@ -7,8 +7,16 @@
 
 namespace MathEval {
   // Declarations
-  const char OPERATORS[] = {
-    '+', '-', '*', '/', '(', ')'
+  struct Operator {
+    char identifier;
+    int precedence;
+  };
+
+  const Operator OPERATORS[] = {
+    { '+', 0 },
+    { '-', 0 },
+    { '*', 1 },
+    { '/', 1 }
   };
 
   enum class TokenType {
@@ -38,7 +46,13 @@ namespace MathEval {
   }
 
   inline bool isOperator(char c) {
-    return std::find(std::begin(OPERATORS), std::end(OPERATORS), c) != std::end(OPERATORS);
+    for (const Operator& op : OPERATORS) {
+      if (op.identifier == c) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   inline bool isNumber(const std::string& value) {
