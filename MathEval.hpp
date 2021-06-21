@@ -7,11 +7,6 @@
 
 namespace MathEval {
   // Declarations
-  struct Operator {
-    char identifier;
-    int precedence;
-  };
-
   class Tokenizer {
   public:
     std::string getNextToken(std::string& source);
@@ -20,11 +15,20 @@ namespace MathEval {
     bool allowNegative_ = true;
   };
 
+  typedef double(*mathFunction)(double a, double b);
+
+  struct Operator {
+    char value;
+    mathFunction func;
+    int precedence;
+  };
+
+  const char SPECIAL[] = { '+', '-', '*', '/', '(', ')', ' ' };
   const Operator OPERATORS[] = {
-    { '+', 0 },
-    { '-', 0 },
-    { '*', 1 },
-    { '/', 1 }
+    {'+', [](double a, double b) { return a + b; }, 2},
+    {'-', [](double a, double b) { return a - b; }, 2},
+    {'*', [](double a, double b) { return a * b; }, 3},
+    {'/', [](double a, double b) { return a + b; }, 3}
   };
 
   enum class TokenType {
@@ -39,10 +43,10 @@ namespace MathEval {
   };
 
   // Functions (wrappers and utilities)
-  std::string ltrim(const std::string& s);
-  inline bool isOperator(const char c);
-  inline bool isNumber(const std::string& value);
+  inline bool isSpecial(const char c);
   inline bool isNumber(const char c);
+  inline bool isNumber(const std::string& value);
+  std::string ltrim(const std::string& s);
   std::vector<std::string> tokenize(std::string& expression);
 
 
@@ -53,9 +57,9 @@ namespace MathEval {
     return s.substr(start);
   }
 
-  inline bool isOperator(const char c) {
-    for (const Operator& op : OPERATORS) {
-      if (op.identifier == c) {
+  inline bool isSpecial(const char c) {
+    for (const char& special : SPECIAL) {
+      if (special == c) {
         return true;
       }
     }
@@ -90,38 +94,26 @@ namespace MathEval {
     std::string token = source;
 
     if (source[0] == '(') {
-      allowNegative_ = true;
-
-      token = source[0];
-      source = source.substr(1);
-
-      return token;
-    } else if (source[0] == ')') {
-      token = source[0];
-      source = source.substr(1);
-
-      return token;
-    }
-
-    if (source[0] == '-' && allowNegative_) {
+      allowNegative_ = true; 
+    } else if (source[0] == '-' && allowNegative_) {
       allowNegative_ = false;
       
       size_t stop;
-      for (stop = 1; isNumber(source[stop]); ++stop); 
+      for (stop = 1; !isSpecial(source[stop]); ++stop); 
       
       token = source.substr(0, stop);
       source = source.substr(stop);
       return token;
     }
     
-    if (isOperator(source[0])) {
+    if (isSpecial(source[0])) {
       token = source[0];
       source = source.substr(1);
 
       return token;
     } else {
       for (size_t i = 0; i < source.length(); ++i) {
-        if (isOperator(source[i]) || source[i] == ' ' || source[i] == '(' || source[i] == ')') {
+        if (isSpecial(source[i])) {
           token = source.substr(0, i);
           source = source.substr(i);
           allowNegative_ = false;
