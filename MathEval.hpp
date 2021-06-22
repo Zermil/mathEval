@@ -9,6 +9,7 @@ namespace MathEval {
   // TODO: Delete when done.
   std::string TOKEN_NAMES[] = {
     "NUMBER_TOKEN",
+    "VARIABLE_TOKEN",
     "PLUS_TOKEN",
     "MINUS_TOKEN",
     "MULT_TOKEN",
@@ -20,6 +21,7 @@ namespace MathEval {
 
   enum class TokenType {
     NUMBER_TOKEN,
+    VARIABLE_TOKEN,
     PLUS_TOKEN,
     MINUS_TOKEN,
     MULT_TOKEN,
@@ -32,6 +34,12 @@ namespace MathEval {
   struct Token {
     std::string value;
     TokenType type;
+  };
+
+  struct Operator {
+    char identifier;
+    double(*mathFunction)(double a, double b);
+    int precedence;
   };
 
   class Tokenizer {
@@ -48,13 +56,8 @@ namespace MathEval {
     bool allowNegative_ = true;
   };
 
-  struct Operator {
-    char identifier;
-    double(*mathFunction)(double a, double b);
-    int precedence;
-  };
-
   const char SPECIAL[] = { '+', '-', '*', '/', '(', ')', ' ' };
+  const std::string VARIABLES[] = { "pi", "e" };
   const Operator OPERATORS[] = {
     {'+', [](double a, double b) { return a + b; }, 2},
     {'-', [](double a, double b) { return a - b; }, 2},
@@ -62,11 +65,14 @@ namespace MathEval {
     {'/', [](double a, double b) { return a + b; }, 3}
   };
 
-  // Functions (wrappers and utilities)
-  inline bool isSpecial(const char c);
-  inline bool isNumber(const char c);
-  inline bool isNumber(const std::string& s);
+  // Functions (wrappers & utilities)
+  bool isSpecial(const char c);
+  bool isVariable(const std::string& s);
+  bool isNumber(const std::string& s);
   std::string ltrim(const std::string& s);
+  std::string toLower(const std::string& s);
+
+  std::vector<Token> getTokens(const std::string& exp); 
 
 
   // Implementations
@@ -76,7 +82,22 @@ namespace MathEval {
     return s.substr(start);
   }
 
-  inline bool isSpecial(const char c) {
+  std::string toLower(const std::string& s) {
+    std::string lowered = "";
+
+    for (const char& c : s) {
+      if (c >= 'A' && c <= 'Z') {
+        lowered += (c - 'A') + 'a';
+        continue;
+      }
+
+      lowered += c;
+    }
+
+    return lowered;
+  }
+
+  bool isSpecial(const char c) {
     for (const char& special : SPECIAL) {
       if (special == c) {
         return true;
@@ -86,15 +107,7 @@ namespace MathEval {
     return false;
   }
 
-  inline bool isNumber(const char c) {
-    if (!(c >= '0' && c <= '9')) {
-      return false;
-    }
-
-    return true;
-  }
-
-  inline bool isNumber(const std::string& s) {
+  bool isNumber(const std::string& s) {
     for (const char& c : s) {
       if (!(c >= '0' && c <= '9')) {
         return false;
@@ -102,6 +115,16 @@ namespace MathEval {
     }
 
     return true;
+  }
+
+  bool isVariable(const std::string& s) {
+    for (const std::string& variable : VARIABLES) {
+      if (variable == toLower(s)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   std::string Tokenizer::getNextToken() {
@@ -149,11 +172,15 @@ namespace MathEval {
   }
   
   TokenType Tokenizer::getTokenType(std::string& token) {
-    if (token.length() == 1) {
-      if (isNumber(token[0])) {
-        return TokenType::NUMBER_TOKEN;
-      }
+    if (isNumber(token)) {
+      return TokenType::NUMBER_TOKEN;
+    }
 
+    if (isVariable(token)) {
+      return TokenType::VARIABLE_TOKEN;
+    }
+
+    if (token.length() == 1) {
       switch(token[0]) {
         case '+':
           return TokenType::PLUS_TOKEN;
@@ -168,15 +195,19 @@ namespace MathEval {
         case ')':
           return TokenType::CLOSEB_TOKEN;
       }
-    } else if (token[0] == '-') {
+    } 
+
+    if (token[0] == '-') {
       std::string remainder = token.substr(1);
 
       if (isNumber(remainder)) {
         return TokenType::NUMBER_TOKEN;
+      } 
+
+      if (isVariable(remainder)) {
+        return TokenType::VARIABLE_TOKEN;
       }
-    } else if (isNumber(token)) {
-      return TokenType::NUMBER_TOKEN;
-    }
+    } 
 
     return TokenType::BAD_TOKEN;
   }
@@ -186,11 +217,7 @@ namespace MathEval {
 
     for (std::string token = getNextToken(); token != ""; token = getNextToken()) {
       TokenType type = getTokenType(token); 
-
-      tokens.push_back({
-        token,
-        type 
-      });
+      tokens.push_back({ token, type });
     }
 
     return tokens;
