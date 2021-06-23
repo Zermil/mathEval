@@ -16,12 +16,12 @@ int main(int argc, char* argv[])
   };
 
   for (std::string& exp : EXPRESSIONS) {
-    std::vector<MathEval::Token> tokens = MathEval::getTokens(exp);
+    std::vector<MathEval::Token> rpnExp = MathEval::RPN(exp);
     
     std::cout << "EXPRESSION: " << exp << std::endl;
 
-    for (const MathEval::Token& token : tokens) {
-      std::cout << token.value << ": " << MathEval::TOKEN_NAMES[static_cast<int>(token.type)] << std::endl; 
+    for (const MathEval::Token& rpn : rpnExp) {
+      std::cout << rpn.value << std::endl; 
     }
 
     std::cout << "===================" << std::endl;

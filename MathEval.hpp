@@ -2,30 +2,15 @@
 #define MATH_EVAL_HPP
 
 #include <vector>
+#include <stack>
+#include <map>
 
 namespace MathEval {
   // Declarations
-
-  // TODO: Delete when done.
-  std::string TOKEN_NAMES[] = {
-    "NUMBER_TOKEN",
-    "VARIABLE_TOKEN",
-    "PLUS_TOKEN",
-    "MINUS_TOKEN",
-    "MULT_TOKEN",
-    "DIV_TOKEN",
-    "OPENB_TOKEN",
-    "CLOSEB_TOKEN",
-    "BAD_TOKEN"
-  };
-
   enum class TokenType {
     NUMBER_TOKEN,
     VARIABLE_TOKEN,
-    PLUS_TOKEN,
-    MINUS_TOKEN,
-    MULT_TOKEN,
-    DIV_TOKEN,
+    OPERATOR_TOKEN,
     OPENB_TOKEN,
     CLOSEB_TOKEN,
     BAD_TOKEN,
@@ -36,8 +21,7 @@ namespace MathEval {
     TokenType type;
   };
 
-  struct Operator {
-    char identifier;
+  struct OperatorExpr {
     double(*mathFunction)(double a, double b);
     int precedence;
   };
@@ -46,7 +30,7 @@ namespace MathEval {
   public:
     Tokenizer(std::string source) : source_(source) {} 
 
-    std::vector<Token> tokenize();
+    std::vector<Token> getAllTokens();
 
   private:
     std::string getNextToken();
@@ -57,22 +41,28 @@ namespace MathEval {
   };
 
   const char SPECIAL[] = { '+', '-', '*', '/', '(', ')', ' ' };
-  const std::string VARIABLES[] = { "pi", "e" };
-  const Operator OPERATORS[] = {
-    {'+', [](double a, double b) { return a + b; }, 2},
-    {'-', [](double a, double b) { return a - b; }, 2},
-    {'*', [](double a, double b) { return a * b; }, 3},
-    {'/', [](double a, double b) { return a + b; }, 3}
+
+  const std::map<std::string, double> VARIABLES = {
+    { "pi", 3.141592653 },
+    { "e",  2.718281828 }
+  };
+
+  const std::map<std::string, OperatorExpr> OPERATORS = {
+    { "+", { [](double a, double b) { return a + b; }, 2 } },
+    { "-", { [](double a, double b) { return a - b; }, 2 } },
+    { "*", { [](double a, double b) { return a * b; }, 3 } },
+    { "/", { [](double a, double b) { return a / b; }, 3 } }
   };
 
   // Functions (wrappers & utilities)
   bool isSpecial(const char c);
+  bool isOperator(const std::string& s);
   bool isVariable(const std::string& s);
   bool isNumber(const std::string& s);
   std::string ltrim(const std::string& s);
   std::string toLower(const std::string& s);
 
-  std::vector<Token> getTokens(const std::string& exp); 
+  std::vector<Token> RPN(const std::string& exp); 
 
 
   // Implementations
@@ -107,6 +97,14 @@ namespace MathEval {
     return false;
   }
 
+  bool isOperator(const std::string& s) {
+    if (OPERATORS.find(s) == OPERATORS.end()) {
+      return false;
+    }
+
+    return true;
+  }
+
   bool isNumber(const std::string& s) {
     for (const char& c : s) {
       if (!(c >= '0' && c <= '9')) {
@@ -118,13 +116,11 @@ namespace MathEval {
   }
 
   bool isVariable(const std::string& s) {
-    for (const std::string& variable : VARIABLES) {
-      if (variable == toLower(s)) {
-        return true;
-      }
+    if (VARIABLES.find(toLower(s)) == VARIABLES.end()) {
+      return false;
     }
 
-    return false;
+    return true;
   }
 
   std::string Tokenizer::getNextToken() {
@@ -181,15 +177,11 @@ namespace MathEval {
     }
 
     if (token.length() == 1) {
-      switch(token[0]) {
-        case '+':
-          return TokenType::PLUS_TOKEN;
-        case '-':
-          return TokenType::MINUS_TOKEN;
-        case '*':
-          return TokenType::MULT_TOKEN;
-        case '/':
-          return TokenType::DIV_TOKEN;
+      if (isOperator(token)) {
+        return TokenType::OPERATOR_TOKEN;
+      }
+
+      switch (token[0]) {
         case '(':
           return TokenType::OPENB_TOKEN;
         case ')':
@@ -212,7 +204,7 @@ namespace MathEval {
     return TokenType::BAD_TOKEN;
   }
 
-  std::vector<Token> Tokenizer::tokenize() {
+  std::vector<Token> Tokenizer::getAllTokens() {
     std::vector<Token> tokens;
 
     for (std::string token = getNextToken(); token != ""; token = getNextToken()) {
@@ -223,9 +215,60 @@ namespace MathEval {
     return tokens;
   }
 
-  std::vector<Token> getTokens(const std::string& exp) {
+  std::vector<Token> RPN(const std::string& exp) {
     Tokenizer tokenizer(exp);
-    return tokenizer.tokenize();
+    std::vector<Token> tokens = tokenizer.getAllTokens();
+
+    std::stack<Token> operatorStack;
+    std::vector<Token> exprQueue; 
+    
+    for (const Token& token : tokens) {
+      if (token.type == TokenType::BAD_TOKEN) {
+        std::cerr << "Invalid token detected: \'" << token.value << "\', make sure your expression is valid!\n";
+        break;
+      }
+
+      if (token.type == TokenType::OPENB_TOKEN) {
+        operatorStack.push(token);
+        continue;
+      }
+
+      if (token.type == TokenType::NUMBER_TOKEN || token.type == TokenType::VARIABLE_TOKEN) {
+        exprQueue.push_back(token);
+        continue;
+      }
+
+      if (token.type == TokenType::OPERATOR_TOKEN) {
+        while (!operatorStack.empty() 
+          && operatorStack.top().type != TokenType::OPENB_TOKEN 
+          && OPERATORS.at(operatorStack.top().value).precedence >= OPERATORS.at(token.value).precedence) 
+        {
+          exprQueue.push_back(operatorStack.top());
+          operatorStack.pop();
+        }
+
+        operatorStack.push(token);
+        continue;
+      }
+
+      if (token.type == TokenType::CLOSEB_TOKEN) {
+        while (operatorStack.top().type != TokenType::OPENB_TOKEN) {
+          exprQueue.push_back(operatorStack.top());
+          operatorStack.pop();
+        }
+        
+        operatorStack.pop();
+        continue;
+      }
+    }
+    
+    // Dequeue remainder
+    while (!operatorStack.empty()) {
+      exprQueue.push_back(operatorStack.top());
+      operatorStack.pop();
+    }
+
+    return exprQueue; 
   }
 }
 
