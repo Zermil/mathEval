@@ -1,6 +1,8 @@
 #ifndef MATH_EVAL_HPP
 #define MATH_EVAL_HPP
 
+#include <stdexcept>
+#include <iostream>
 #include <vector>
 #include <stack>
 #include <map>
@@ -28,15 +30,18 @@ namespace MathEval {
 
   class Tokenizer {
   public:
-    Tokenizer(std::string source) : source_(source) {} 
+    Tokenizer(std::string source) : source_(source), expr_(source) {} 
 
-    std::vector<Token> getAllTokens();
+    std::vector<Token> getRPN();
 
   private:
     std::string getNextToken();
-    TokenType getTokenType(std::string& token);
+    TokenType getTokenType(std::string& token) const;
+    std::vector<Token> getAllTokens();
+    std::vector<Token> buildRPN();
 
     std::string source_;
+    std::string expr_; // Just for better error throwing
     bool allowNegative_ = true;
   };
 
@@ -61,8 +66,6 @@ namespace MathEval {
   bool isNumber(const std::string& s);
   std::string ltrim(const std::string& s);
   std::string toLower(const std::string& s);
-
-  std::vector<Token> RPN(const std::string& exp); 
 
 
   // Implementations
@@ -123,6 +126,19 @@ namespace MathEval {
     return true;
   }
 
+  // Tokenizer Implementations
+  std::vector<Token> Tokenizer::getRPN() {
+    std::vector<Token> RPNexpr;
+
+    try {
+      RPNexpr = buildRPN();
+    } catch (const std::runtime_error& error) {
+      std::cout << error.what() << '\n'; 
+    }
+
+    return RPNexpr;
+  }
+  
   std::string Tokenizer::getNextToken() {
     if (source_ == "") {
       return "";
@@ -167,7 +183,7 @@ namespace MathEval {
     return token;
   }
   
-  TokenType Tokenizer::getTokenType(std::string& token) {
+  TokenType Tokenizer::getTokenType(std::string& token) const {
     if (isNumber(token)) {
       return TokenType::NUMBER_TOKEN;
     }
@@ -182,10 +198,8 @@ namespace MathEval {
       }
 
       switch (token[0]) {
-        case '(':
-          return TokenType::OPENB_TOKEN;
-        case ')':
-          return TokenType::CLOSEB_TOKEN;
+        case '(': return TokenType::OPENB_TOKEN;
+        case ')': return TokenType::CLOSEB_TOKEN;
       }
     } 
 
@@ -215,17 +229,15 @@ namespace MathEval {
     return tokens;
   }
 
-  std::vector<Token> RPN(const std::string& exp) {
-    Tokenizer tokenizer(exp);
-    std::vector<Token> tokens = tokenizer.getAllTokens();
+  std::vector<Token> Tokenizer::buildRPN() {
+    std::vector<Token> tokens = getAllTokens();
 
     std::stack<Token> operatorStack;
     std::vector<Token> exprQueue; 
     
     for (const Token& token : tokens) {
       if (token.type == TokenType::BAD_TOKEN) {
-        std::cerr << "Invalid token detected: \'" << token.value << "\', make sure your expression is valid!\n";
-        break;
+        throw std::runtime_error("Unrecognized token in: " + expr_);
       }
 
       if (token.type == TokenType::OPENB_TOKEN) {
@@ -252,9 +264,13 @@ namespace MathEval {
       }
 
       if (token.type == TokenType::CLOSEB_TOKEN) {
-        while (operatorStack.top().type != TokenType::OPENB_TOKEN) {
+        while (!operatorStack.empty() && operatorStack.top().type != TokenType::OPENB_TOKEN) {
           exprQueue.push_back(operatorStack.top());
           operatorStack.pop();
+        }
+
+        if (operatorStack.empty()) {
+          throw std::runtime_error("Mismatched parenthesis in: " + expr_);
         }
         
         operatorStack.pop();
@@ -264,6 +280,10 @@ namespace MathEval {
     
     // Dequeue remainder
     while (!operatorStack.empty()) {
+      if (operatorStack.top().type == TokenType::OPENB_TOKEN) {
+        throw std::runtime_error("Mismatched parenthesis in: " + expr_);
+      }
+
       exprQueue.push_back(operatorStack.top());
       operatorStack.pop();
     }
