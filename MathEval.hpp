@@ -13,6 +13,9 @@ namespace MathEval {
   //
   // Declarations
   //
+  typedef double(*pUnaryFunction)(double a);
+  typedef double(*pBinaryFunction)(double a, double b);
+
   enum class TokenType {
     NUMBER_TOKEN = 0,
     VARIABLE_TOKEN,
@@ -29,7 +32,7 @@ namespace MathEval {
   };
 
   struct OperatorExpr {
-    double(*mathFunction)(double, double);
+    pBinaryFunction mathFunction;
     int precedence;
     bool leftAssociative;
   };
@@ -51,28 +54,29 @@ namespace MathEval {
     bool allowNegative_ = true;
   };
 
-  const char SPECIAL[] = { '+', '-', '*', '/', '(', ')', ' ', ',', '^' };
+  const char SPECIAL[] = { '+', '-', '*', '/', '(', ')', ' ', ',', '^', '%' };
 
   const std::map<std::string, double> VARIABLES = {
     { "pi",  3.141592653 },
     { "e" ,  2.718281828 },
-    { "rc",  1729 }
+    { "rc",  1729        }
   };
 
   const std::map<std::string, OperatorExpr> OPERATORS = {
-    { "+", { [](double a, double b) { return a + b; },     2, true } },
-    { "-", { [](double a, double b) { return a - b; },     2, true } },
-    { "*", { [](double a, double b) { return a * b; },     3, true } },
-    { "/", { [](double a, double b) { return a / b; },     3, true } },
-    { "^", { [](double a, double b) { return pow(a, b); }, 4, false } }
+    { "+", { [](double a, double b) { return a + b;      }, 2, true  } },
+    { "-", { [](double a, double b) { return a - b;      }, 2, true  } },
+    { "*", { [](double a, double b) { return a * b;      }, 3, true  } },
+    { "/", { [](double a, double b) { return a / b;      }, 3, true  } },
+    { "%", { [](double a, double b) { return fmod(a, b); }, 3, true  } },
+    { "^", { [](double a, double b) { return pow(a, b);  }, 4, false } }
   };
 
-  const std::map<std::string, double(*)(double)> UNARY_FUNCTIONS = {
+  const std::map<std::string, pUnaryFunction> UNARY_FUNCTIONS = {
     { "sin", [](double a) { return sin(a); } },
     { "cos", [](double a) { return cos(a); } }
   };
 
-  const std::map<std::string, double(*)(double, double)> BINARY_FUNCTIONS = {
+  const std::map<std::string, pBinaryFunction> BINARY_FUNCTIONS = {
     { "max", [](double a, double b) { return std::max(a, b); } }
   };
 
