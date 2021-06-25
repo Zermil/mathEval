@@ -10,7 +10,9 @@
 #include <map>
 
 namespace MathEval {
+  //
   // Declarations
+  //
   enum class TokenType {
     NUMBER_TOKEN = 0,
     VARIABLE_TOKEN,
@@ -29,7 +31,7 @@ namespace MathEval {
   struct OperatorExpr {
     double(*mathFunction)(double, double);
     int precedence;
-    int associativity; // 0 = left, 1 = right
+    bool leftAssociative;
   };
 
   class Tokenizer {
@@ -58,11 +60,11 @@ namespace MathEval {
   };
 
   const std::map<std::string, OperatorExpr> OPERATORS = {
-    { "+", { [](double a, double b) { return a + b; },     2, 0 } },
-    { "-", { [](double a, double b) { return a - b; },     2, 0 } },
-    { "*", { [](double a, double b) { return a * b; },     3, 0 } },
-    { "/", { [](double a, double b) { return a / b; },     3, 0 } },
-    { "^", { [](double a, double b) { return pow(a, b); }, 4, 1 } }
+    { "+", { [](double a, double b) { return a + b; },     2, true } },
+    { "-", { [](double a, double b) { return a - b; },     2, true } },
+    { "*", { [](double a, double b) { return a * b; },     3, true } },
+    { "/", { [](double a, double b) { return a / b; },     3, true } },
+    { "^", { [](double a, double b) { return pow(a, b); }, 4, false } }
   };
 
   const std::map<std::string, double(*)(double)> UNARY_FUNCTIONS = {
@@ -85,15 +87,19 @@ namespace MathEval {
   std::string ltrim(const std::string& s);
   std::string toLower(const std::string& s);
 
-
+  
+  //
   // Implementations
-  std::string ltrim(const std::string& s) {
+  //
+  std::string ltrim(const std::string& s) 
+  {
     size_t start;
     for (start = 0; s[start] == ' '; ++start);
     return s.substr(start);
   }
 
-  std::string toLower(const std::string& s) {
+  std::string toLower(const std::string& s) 
+  {
     std::string lowered = "";
 
     for (const char& c : s) {
@@ -108,7 +114,8 @@ namespace MathEval {
     return lowered;
   }
 
-  bool isSpecial(const char c) {
+  bool isSpecial(const char c) 
+  {
     for (const char& special : SPECIAL) {
       if (special == c) {
         return true;
@@ -118,7 +125,8 @@ namespace MathEval {
     return false;
   }
 
-  bool isOperator(const std::string& s) {
+  bool isOperator(const std::string& s) 
+  {
     if (OPERATORS.find(s) == OPERATORS.end()) {
       return false;
     }
@@ -126,7 +134,8 @@ namespace MathEval {
     return true;
   }
 
-  bool isUnaryFunction(const std::string& s) {
+  bool isUnaryFunction(const std::string& s) 
+  {
     if (UNARY_FUNCTIONS.find(toLower(s)) == UNARY_FUNCTIONS.end()) {
       return false;
     }
@@ -134,7 +143,8 @@ namespace MathEval {
     return true;
   }
 
-  bool isBinaryFunction(const std::string& s) {
+  bool isBinaryFunction(const std::string& s)
+  {
     if (BINARY_FUNCTIONS.find(toLower(s)) == BINARY_FUNCTIONS.end()) {
       return false;
     }
@@ -142,7 +152,8 @@ namespace MathEval {
     return true;
   }
 
-  bool isFunction(const std::string& s) {
+  bool isFunction(const std::string& s) 
+  {
     if (s[0] == '-') {
       return isBinaryFunction(s.substr(1)) || isUnaryFunction(s.substr(1));
     }
@@ -150,7 +161,8 @@ namespace MathEval {
     return isBinaryFunction(s) || isUnaryFunction(s);
   }
 
-  bool isVariable(const std::string& s) {
+  bool isVariable(const std::string& s) 
+  {
     if (VARIABLES.find(toLower(s)) == VARIABLES.end()) {
       return false;
     }
@@ -158,7 +170,8 @@ namespace MathEval {
     return true;
   }
 
-  bool isNumber(const std::string& s) {
+  bool isNumber(const std::string& s) 
+  {
     char* endPtr = nullptr;
     double number = strtod(s.c_str(), &endPtr);
 
@@ -166,8 +179,11 @@ namespace MathEval {
   }
 
 
+  // 
   // Tokenizer Implementations
-  std::vector<Token> Tokenizer::getRPN() {
+  //
+  std::vector<Token> Tokenizer::getRPN() 
+  {
     std::vector<Token> RPNexpr;
 
     try {
@@ -179,7 +195,8 @@ namespace MathEval {
     return RPNexpr;
   }
   
-  std::string Tokenizer::getNextToken() {
+  std::string Tokenizer::getNextToken() 
+  {
     if (source_ == "") {
       return "";
     }
@@ -223,7 +240,8 @@ namespace MathEval {
     return token;
   }
   
-  TokenType Tokenizer::getTokenType(std::string& token) const {
+  TokenType Tokenizer::getTokenType(std::string& token) const 
+  {
     if (isFunction(token)) {
       return TokenType::FUNCTION_TOKEN;
     }
@@ -246,7 +264,7 @@ namespace MathEval {
         case ')': return TokenType::CLOSEB_TOKEN;
       }
     } 
-;
+
     if (token[0] == '-') {
       std::string remainder = token.substr(1);
 
@@ -262,7 +280,8 @@ namespace MathEval {
     return TokenType::BAD_TOKEN;
   }
 
-  std::vector<Token> Tokenizer::getAllTokens() {
+  std::vector<Token> Tokenizer::getAllTokens() 
+  {
     std::vector<Token> tokens;
 
     for (std::string token = getNextToken(); token != ""; token = getNextToken()) {
@@ -278,7 +297,8 @@ namespace MathEval {
     return tokens;
   }
 
-  std::vector<Token> Tokenizer::buildRPN() {
+  std::vector<Token> Tokenizer::buildRPN() 
+  {
     std::vector<Token> tokens = getAllTokens();
 
     std::stack<Token> operatorStack;
@@ -305,7 +325,7 @@ namespace MathEval {
           if (operatorStack.top().type == TokenType::OPERATOR_TOKEN) {
             int topPrecedence = OPERATORS.at(operatorStack.top().value).precedence;
             int tokenPrecedence = OPERATORS.at(token.value).precedence; 
-            bool isLeftAssociative = (OPERATORS.at(token.value).associativity == 0);
+            bool isLeftAssociative = OPERATORS.at(token.value).leftAssociative;
             
             if (topPrecedence >= tokenPrecedence && isLeftAssociative) {
               exprQueue.push_back(operatorStack.top());
