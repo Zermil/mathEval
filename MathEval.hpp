@@ -1,9 +1,8 @@
 #ifndef MATH_EVAL_HPP
 #define MATH_EVAL_HPP
 
-#include <stdexcept>
 #include <algorithm>
-#include <iostream>
+#include <cassert>
 #include <vector>
 #include <cmath>
 #include <stack>
@@ -39,18 +38,16 @@ namespace MathEval {
 
   class Tokenizer {
   public:
-    Tokenizer(std::string source) : source_(source), expr_(source) {} 
+    Tokenizer(std::string source) : source_(source) {} 
 
-    std::vector<Token> getRPN();
+    std::vector<Token> buildRPN();
 
   private:
     std::string getNextToken();
     TokenType getTokenType(std::string& token) const;
     std::vector<Token> getAllTokens();
-    std::vector<Token> buildRPN();
 
     std::string source_;
-    std::string expr_; // Just for better error throwing
     bool allowNegative_ = true;
   };
 
@@ -186,19 +183,6 @@ namespace MathEval {
   // 
   // Tokenizer Implementations
   //
-  std::vector<Token> Tokenizer::getRPN() 
-  {
-    std::vector<Token> RPNexpr;
-
-    try {
-      RPNexpr = buildRPN();
-    } catch (const std::runtime_error& error) {
-      std::cout << error.what() << '\n'; 
-    }
-
-    return RPNexpr;
-  }
-  
   std::string Tokenizer::getNextToken() 
   {
     if (source_ == "") {
@@ -309,9 +293,7 @@ namespace MathEval {
     std::vector<Token> exprQueue; 
     
     for (const Token& token : tokens) {
-      if (token.type == TokenType::BAD_TOKEN) {
-        throw std::runtime_error("Unrecognized token in: " + expr_);
-      }
+      assert(("Unrecognized token", token.type != TokenType::BAD_TOKEN));
 
       if (token.type == TokenType::OPENB_TOKEN || token.type == TokenType::FUNCTION_TOKEN) {
         operatorStack.push(token);
@@ -354,9 +336,7 @@ namespace MathEval {
           operatorStack.pop();
         }
 
-        if (operatorStack.empty()) {
-          throw std::runtime_error("Mismatched parenthesis in: " + expr_);
-        }
+        assert(("Mismatched parenthesis", !operatorStack.empty()));
         
         operatorStack.pop();
         continue;
@@ -365,9 +345,7 @@ namespace MathEval {
     
     // Dequeue remainder
     while (!operatorStack.empty()) {
-      if (operatorStack.top().type == TokenType::OPENB_TOKEN) {
-        throw std::runtime_error("Mismatched parenthesis in: " + expr_);
-      }
+      assert(("Mismatched parenthesis", operatorStack.top().type != TokenType::OPENB_TOKEN));
 
       exprQueue.push_back(operatorStack.top());
       operatorStack.pop();
