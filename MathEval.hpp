@@ -51,7 +51,7 @@ namespace MathEval {
     RPN buildRPN();
 
   private:
-    TokenType getTokenType(std::string& token) const;
+    TokenType getTokenType(const std::string& token) const;
     std::string getNextToken();
     RPN getRpnTokens();
 
@@ -159,7 +159,7 @@ namespace MathEval {
 
   bool isUnaryFunction(const std::string& s) 
   {
-    if (UNARY_FUNCTIONS.find(toLower(s)) == UNARY_FUNCTIONS.end()) {
+    if (UNARY_FUNCTIONS.find(s) == UNARY_FUNCTIONS.end()) {
       return false;
     }
 
@@ -168,7 +168,7 @@ namespace MathEval {
 
   bool isBinaryFunction(const std::string& s)
   {
-    if (BINARY_FUNCTIONS.find(toLower(s)) == BINARY_FUNCTIONS.end()) {
+    if (BINARY_FUNCTIONS.find(s) == BINARY_FUNCTIONS.end()) {
       return false;
     }
 
@@ -187,12 +187,9 @@ namespace MathEval {
   bool isVariable(const std::string& s) 
   {
     std::string value = s;
+    if (s[0] == '-') value = value.substr(1);
 
-    if (s[0] == '-') {
-      value = s.substr(1);
-    }
-
-    if (VARIABLES.find(toLower(value)) == VARIABLES.end()) {
+    if (VARIABLES.find(value) == VARIABLES.end()) {
       return false;
     }
 
@@ -256,7 +253,7 @@ namespace MathEval {
     return token;
   }
   
-  TokenType Tokenizer::getTokenType(std::string& token) const 
+  TokenType Tokenizer::getTokenType(const std::string& token) const 
   {
     if (isFunction(token)) {
       return TokenType::FUNCTION_TOKEN;
@@ -273,7 +270,7 @@ namespace MathEval {
     if (isOperator(token)) {
       return TokenType::OPERATOR_TOKEN;
     }
-  
+
     if (token == "(") return TokenType::OPENB_TOKEN; 
     if (token == ")") return TokenType::CLOSEB_TOKEN;
 
@@ -405,7 +402,7 @@ namespace MathEval {
       if (token.type == TokenType::FUNCTION_TOKEN) {
         Node* funcNode = new Node;
 
-        if (isBinaryFunction(token.value)) {
+        if (isBinaryFunction(token.value) || isBinaryFunction(token.value.substr(1))) {
           assert(("Incomplete/Invalid expression", expressions.size() >= 2));
 
           funcNode->leaf = token;
@@ -440,32 +437,35 @@ namespace MathEval {
   //
   double evalSyntaxTree(Node* tree)
   {
-    std::string leafValue = toLower(tree->leaf.value);
+    std::string leafValue = tree->leaf.value;
     TokenType type = tree->leaf.type;
 
-    bool isNegative = leafValue[0] == '-';
-    
     switch (type) {
       case TokenType::NUMBER_TOKEN:   return std::strtod(leafValue.c_str(), nullptr);
-      case TokenType::VARIABLE_TOKEN: return isNegative ? -VARIABLES.at(leafValue.substr(1)) : VARIABLES.at(leafValue);
       case TokenType::OPERATOR_TOKEN: return OPERATORS.at(leafValue).mathFunction(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right));
-      case TokenType::FUNCTION_TOKEN: {
-        if (isNegative) {
-          return isBinaryFunction(leafValue.substr(1)) 
-            ? -BINARY_FUNCTIONS.at(leafValue.substr(1))(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right))
-            : -UNARY_FUNCTIONS.at(leafValue.substr(1))(evalSyntaxTree(tree->left));
-        }
-      }
     }
 
-    return isBinaryFunction(leafValue) 
-      ? BINARY_FUNCTIONS.at(leafValue)(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right))
-      : UNARY_FUNCTIONS.at(leafValue)(evalSyntaxTree(tree->left));
+    bool isNegative = leafValue[0] == '-';
+    if (isNegative) leafValue = leafValue.substr(1); 
+
+    double output;
+
+    switch (type) {
+      case TokenType::VARIABLE_TOKEN: 
+        output = VARIABLES.at(leafValue);
+        break;
+      case TokenType::FUNCTION_TOKEN:
+        if (isBinaryFunction(leafValue)) output = BINARY_FUNCTIONS.at(leafValue)(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right));
+        else output = UNARY_FUNCTIONS.at(leafValue)(evalSyntaxTree(tree->left));
+        break;
+    }
+
+    return isNegative ? -output : output;
   }
 
-  double evalExpression(std::string expression) 
+  double evalExpression(std::string expression)
   {
-    Tokenizer tokenizer(expression);
+    Tokenizer tokenizer(toLower(expression));
     RPN rpnExp = tokenizer.buildRPN();
   
     SyntaxTree tree(rpnExp);
