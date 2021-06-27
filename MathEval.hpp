@@ -221,7 +221,7 @@ namespace MathEval {
       allowNegative_ = false;
       
       size_t stop;
-      for (stop = 1; !isSpecial(source_[stop]); ++stop); 
+      for (stop = 1; !isSpecial(source_[stop]) && source_[stop] != '\0'; ++stop);
       
       token = source_.substr(0, stop);
       source_ = source_.substr(stop);
