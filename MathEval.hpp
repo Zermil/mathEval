@@ -1,7 +1,6 @@
 #ifndef MATH_EVAL_HPP
 #define MATH_EVAL_HPP
 
-#include <algorithm>
 #include <cassert>
 #include <vector>
 #include <cmath>
@@ -93,7 +92,7 @@ namespace MathEval {
   };
 
   const std::map<std::string, pBinaryFunction> BINARY_FUNCTIONS = {
-    { "max", [](double a, double b) { return std::max(a, b); } }
+    { "max", [](double a, double b) { return a > b ? a : b; } }
   };
 
   // Functions (wrappers & utilities)
@@ -471,7 +470,7 @@ namespace MathEval {
     SyntaxTree tree(rpnExp);
     Node* ast = tree.buildSyntaxTree();
 
-    return evalSyntaxTree(ast); 
+    return evalSyntaxTree(ast);
   }
 }
 
