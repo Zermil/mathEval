@@ -16,9 +16,9 @@ int main(int argc, char* argv[])
     "-sin ( max ( 2, 3 ) / 3 * PI )"
   };
 
-  for (std::string& exp : EXPRESSIONS) {
+  for (const std::string& exp : EXPRESSIONS) {
     std::cout << "EXPRESSION: " << exp << std::endl;
-    std::cout << "= " << MathEval::evalExpression(exp) << '\n'; 
+    std::cout << "= " << MathEval::evalExpression(exp) << '\n';
     std::cout << "===================" << std::endl;
   }
 

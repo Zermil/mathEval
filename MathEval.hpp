@@ -41,11 +41,11 @@ namespace MathEval {
     Node* left;
     Node* right;
   };
-  
+
   // Classes
   class Tokenizer {
   public:
-    Tokenizer(std::string source) : source_(source) {} 
+    Tokenizer(std::string source) : source_(source) {}
 
     RPN buildRPN();
 
@@ -67,7 +67,7 @@ namespace MathEval {
   private:
     RPN rpnExp_;
   };
-  
+
   // Constants
   const char SPECIAL[] = { '+', '-', '*', '/', '(', ')', ' ', ',', '^', '%' };
 
@@ -109,18 +109,18 @@ namespace MathEval {
   double evalSyntaxTree(Node* tree);
   double evalExpression(std::string expression);
 
-  
+
   //
   // Helper implementations
   //
-  std::string ltrim(const std::string& s) 
+  std::string ltrim(const std::string& s)
   {
     size_t start;
     for (start = 0; s[start] == ' '; ++start);
     return s.substr(start);
   }
 
-  std::string toLower(const std::string& s) 
+  std::string toLower(const std::string& s)
   {
     std::string lowered = "";
 
@@ -136,7 +136,7 @@ namespace MathEval {
     return lowered;
   }
 
-  bool isSpecial(const char c) 
+  bool isSpecial(const char c)
   {
     for (const char& special : SPECIAL) {
       if (special == c) {
@@ -147,7 +147,7 @@ namespace MathEval {
     return false;
   }
 
-  bool isOperator(const std::string& s) 
+  bool isOperator(const std::string& s)
   {
     if (OPERATORS.find(s) == OPERATORS.end()) {
       return false;
@@ -156,7 +156,7 @@ namespace MathEval {
     return true;
   }
 
-  bool isUnaryFunction(const std::string& s) 
+  bool isUnaryFunction(const std::string& s)
   {
     if (UNARY_FUNCTIONS.find(s) == UNARY_FUNCTIONS.end()) {
       return false;
@@ -174,7 +174,7 @@ namespace MathEval {
     return true;
   }
 
-  bool isFunction(const std::string& s) 
+  bool isFunction(const std::string& s)
   {
     if (s[0] == '-') {
       return isBinaryFunction(s.substr(1)) || isUnaryFunction(s.substr(1));
@@ -183,7 +183,7 @@ namespace MathEval {
     return isBinaryFunction(s) || isUnaryFunction(s);
   }
 
-  bool isVariable(const std::string& s) 
+  bool isVariable(const std::string& s)
   {
     std::string value = s;
     if (s[0] == '-') value = value.substr(1);
@@ -195,7 +195,7 @@ namespace MathEval {
     return true;
   }
 
-  bool isNumber(const std::string& s) 
+  bool isNumber(const std::string& s)
   {
     char* endPtr = nullptr;
     double number = strtod(s.c_str(), &endPtr);
@@ -207,7 +207,7 @@ namespace MathEval {
   // 
   // Tokenizer implementations
   //
-  std::string Tokenizer::getNextToken() 
+  std::string Tokenizer::getNextToken()
   {
     if (source_ == "") {
       return "";
@@ -218,25 +218,26 @@ namespace MathEval {
 
     if (source_[0] == '-' && allowNegative_) {
       allowNegative_ = false;
-      
+
       size_t stop;
       for (stop = 1; !isSpecial(source_[stop]) && source_[stop] != '\0'; ++stop);
-      
+
       token = source_.substr(0, stop);
       source_ = source_.substr(stop);
       return token;
     }
-    
+
     if (isSpecial(source_[0])) {
       if (source_[0] == '(') {
-        allowNegative_ = true; 
+        allowNegative_ = true;
       }
 
       token = source_[0];
       source_ = source_.substr(1);
 
       return token;
-    } else {
+    }
+    else {
       for (size_t i = 0; i < source_.length(); ++i) {
         if (isSpecial(source_[i])) {
           token = source_.substr(0, i);
@@ -251,8 +252,8 @@ namespace MathEval {
     source_ = "";
     return token;
   }
-  
-  TokenType Tokenizer::getTokenType(const std::string& token) const 
+
+  TokenType Tokenizer::getTokenType(const std::string& token) const
   {
     if (isFunction(token)) {
       return TokenType::FUNCTION_TOKEN;
@@ -270,13 +271,13 @@ namespace MathEval {
       return TokenType::OPERATOR_TOKEN;
     }
 
-    if (token == "(") return TokenType::OPENB_TOKEN; 
+    if (token == "(") return TokenType::OPENB_TOKEN;
     if (token == ")") return TokenType::CLOSEB_TOKEN;
 
     return TokenType::BAD_TOKEN;
   }
 
-  RPN Tokenizer::getRpnTokens() 
+  RPN Tokenizer::getRpnTokens()
   {
     RPN tokens;
 
@@ -286,7 +287,7 @@ namespace MathEval {
         continue;
       }
 
-      TokenType type = getTokenType(token); 
+      TokenType type = getTokenType(token);
 
       assert(("Unrecognized token", type != TokenType::BAD_TOKEN));
       tokens.push_back({ token, type });
@@ -295,13 +296,13 @@ namespace MathEval {
     return tokens;
   }
 
-  RPN Tokenizer::buildRPN() 
+  RPN Tokenizer::buildRPN()
   {
     RPN tokens = getRpnTokens();
 
     std::stack<Token> operatorStack;
-    RPN exprQueue; 
-    
+    RPN exprQueue;
+
     for (const Token& token : tokens) {
       if (token.type == TokenType::OPENB_TOKEN || token.type == TokenType::FUNCTION_TOKEN) {
         operatorStack.push(token);
@@ -314,20 +315,22 @@ namespace MathEval {
       }
 
       if (token.type == TokenType::OPERATOR_TOKEN) {
-        while (!operatorStack.empty() && operatorStack.top().type != TokenType::OPENB_TOKEN) { 
+        while (!operatorStack.empty() && operatorStack.top().type != TokenType::OPENB_TOKEN) {
 
           if (operatorStack.top().type == TokenType::OPERATOR_TOKEN) {
             int topPrecedence = OPERATORS.at(operatorStack.top().value).precedence;
-            int tokenPrecedence = OPERATORS.at(token.value).precedence; 
+            int tokenPrecedence = OPERATORS.at(token.value).precedence;
             bool isLeftAssociative = OPERATORS.at(token.value).leftAssociative;
-            
+
             if (topPrecedence >= tokenPrecedence && isLeftAssociative) {
               exprQueue.push_back(operatorStack.top());
               operatorStack.pop();
-            } else {
+            }
+            else {
               break;
             }
-          } else {
+          }
+          else {
             exprQueue.push_back(operatorStack.top());
             operatorStack.pop();
           }
@@ -345,12 +348,12 @@ namespace MathEval {
         }
 
         assert(("Mismatched parenthesis", !operatorStack.empty()));
-        
+
         operatorStack.pop();
         continue;
       }
     }
-    
+
     // Dequeue remainder
     while (!operatorStack.empty()) {
       assert(("Mismatched parenthesis", operatorStack.top().type != TokenType::OPENB_TOKEN));
@@ -359,9 +362,9 @@ namespace MathEval {
       operatorStack.pop();
     }
 
-    return exprQueue; 
+    return exprQueue;
   }
-  
+
 
   //
   // SyntaxTree implementations
@@ -369,7 +372,7 @@ namespace MathEval {
   Node* SyntaxTree::buildSyntaxTree() const
   {
     std::stack<Node*> expressions;
-    
+
     for (const Token& token : rpnExp_) {
       if (token.type == TokenType::NUMBER_TOKEN || token.type == TokenType::VARIABLE_TOKEN) {
         Node* numNode = new Node;
@@ -377,7 +380,7 @@ namespace MathEval {
         numNode->leaf = token;
         numNode->left = nullptr;
         numNode->right = nullptr;
-        
+
         expressions.push(numNode);
         continue;
       }
@@ -411,7 +414,8 @@ namespace MathEval {
 
           funcNode->left = expressions.top();
           expressions.pop();
-        } else {
+        }
+        else {
           assert(("Incomplete/Invalid expression", expressions.size() >= 1));
 
           funcNode->leaf = token;
@@ -425,11 +429,11 @@ namespace MathEval {
         continue;
       }
     }
-    
+
     assert(("Incomplete/Invalid expression", expressions.size() == 1));
     return expressions.top();
   }
-  
+
 
   //
   // Wrapper functions implementations
@@ -439,19 +443,20 @@ namespace MathEval {
     std::string leafValue = tree->leaf.value;
     TokenType type = tree->leaf.type;
 
-    switch (type) {
-      case TokenType::NUMBER_TOKEN:   return std::strtod(leafValue.c_str(), nullptr);
-      case TokenType::OPERATOR_TOKEN: return OPERATORS.at(leafValue).mathFunction(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right));
-    }
-
-    bool isNegative = leafValue[0] == '-';
-    if (isNegative) leafValue = leafValue.substr(1); 
+    bool isNegative = leafValue.length() > 1 && leafValue[0] == '-';
+    if (isNegative) leafValue = leafValue.substr(1);
 
     double output;
 
     switch (type) {
-      case TokenType::VARIABLE_TOKEN: 
+      case TokenType::NUMBER_TOKEN:
+        output = std::strtod(leafValue.c_str(), nullptr);
+        break;
+      case TokenType::VARIABLE_TOKEN:
         output = VARIABLES.at(leafValue);
+        break;
+      case TokenType::OPERATOR_TOKEN:
+        output = OPERATORS.at(leafValue).mathFunction(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right));
         break;
       case TokenType::FUNCTION_TOKEN:
         if (isBinaryFunction(leafValue)) output = BINARY_FUNCTIONS.at(leafValue)(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right));
@@ -459,6 +464,7 @@ namespace MathEval {
         break;
     }
 
+    delete tree; // Node no longer needed free memory
     return isNegative ? -output : output;
   }
 
@@ -466,7 +472,7 @@ namespace MathEval {
   {
     Tokenizer tokenizer(toLower(expression));
     RPN rpnExp = tokenizer.buildRPN();
-  
+
     SyntaxTree tree(rpnExp);
     Node* ast = tree.buildSyntaxTree();
 
