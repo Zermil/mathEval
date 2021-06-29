@@ -40,6 +40,20 @@ namespace MathEval {
     Token leaf;
     Node* left;
     Node* right;
+
+    Node(Token val)
+    {
+      leaf = val;
+      left = nullptr;
+      right = nullptr;
+    }
+
+    Node(Token val, Node* pRight, Node* pLeft)
+    {
+      leaf = val;
+      right = pRight;
+      left = pLeft;
+    }
   };
 
   // Classes
@@ -60,12 +74,13 @@ namespace MathEval {
 
   class SyntaxTree {
   public:
-    SyntaxTree(RPN rpnExp) : rpnExp_(rpnExp) {}
+    SyntaxTree(RPN rpnExp);
+    ~SyntaxTree();
 
-    Node* buildSyntaxTree() const;
+    Node* getSyntaxTree() { return ast_; }
 
   private:
-    RPN rpnExp_;
+    Node* ast_;
   };
 
   // Constants
@@ -105,6 +120,8 @@ namespace MathEval {
   bool isFunction(const std::string& s);
   std::string ltrim(const std::string& s);
   std::string toLower(const std::string& s);
+  Node* getPtrFromStack(std::stack<Node*>& stack);
+  void deleteAST(Node* ast);
 
   double evalSyntaxTree(Node* tree);
   double evalExpression(std::string expression);
@@ -203,6 +220,25 @@ namespace MathEval {
     return endPtr != s.c_str() && *endPtr == '\0' && number != HUGE_VAL;
   }
 
+  Node* getPtrFromStack(std::stack<Node*>& stack)
+  {
+    Node* ptr = stack.top();
+    stack.pop();
+
+    return ptr;
+  }
+
+  void deleteAST(Node* ast)
+  {
+    if (ast == nullptr) return; 
+
+    deleteAST(ast->left);
+    deleteAST(ast->right);
+
+    delete ast;
+    ast = nullptr;
+  }
+
 
   // 
   // Tokenizer implementations
@@ -236,8 +272,7 @@ namespace MathEval {
       source_ = source_.substr(1);
 
       return token;
-    }
-    else {
+    } else {
       for (size_t i = 0; i < source_.length(); ++i) {
         if (isSpecial(source_[i])) {
           token = source_.substr(0, i);
@@ -325,12 +360,10 @@ namespace MathEval {
             if (topPrecedence >= tokenPrecedence && isLeftAssociative) {
               exprQueue.push_back(operatorStack.top());
               operatorStack.pop();
-            }
-            else {
+            } else {
               break;
             }
-          }
-          else {
+          } else {
             exprQueue.push_back(operatorStack.top());
             operatorStack.pop();
           }
@@ -369,69 +402,44 @@ namespace MathEval {
   //
   // SyntaxTree implementations
   //
-  Node* SyntaxTree::buildSyntaxTree() const
+  SyntaxTree::SyntaxTree(RPN rpnExp)
   {
     std::stack<Node*> expressions;
 
-    for (const Token& token : rpnExp_) {
+    for (const Token& token : rpnExp) {
       if (token.type == TokenType::NUMBER_TOKEN || token.type == TokenType::VARIABLE_TOKEN) {
-        Node* numNode = new Node;
+        expressions.push(new Node(token));
 
-        numNode->leaf = token;
-        numNode->left = nullptr;
-        numNode->right = nullptr;
-
-        expressions.push(numNode);
         continue;
       }
 
       if (token.type == TokenType::OPERATOR_TOKEN) {
         assert(("Incomplete/Invalid expression", expressions.size() >= 2));
-        Node* opNode = new Node;
-
-        opNode->leaf = token;
-
-        opNode->right = expressions.top();
-        expressions.pop();
-
-        opNode->left = expressions.top();
-        expressions.pop();
-
-        expressions.push(opNode);
+        expressions.push(new Node(token, getPtrFromStack(expressions), getPtrFromStack(expressions)));
+        
         continue;
       }
 
       if (token.type == TokenType::FUNCTION_TOKEN) {
-        Node* funcNode = new Node;
-
         if (isBinaryFunction(token.value) || isBinaryFunction(token.value.substr(1))) {
           assert(("Incomplete/Invalid expression", expressions.size() >= 2));
-
-          funcNode->leaf = token;
-
-          funcNode->right = expressions.top();
-          expressions.pop();
-
-          funcNode->left = expressions.top();
-          expressions.pop();
-        }
-        else {
+          expressions.push(new Node(token, getPtrFromStack(expressions), getPtrFromStack(expressions)));
+        } else {
           assert(("Incomplete/Invalid expression", expressions.size() >= 1));
-
-          funcNode->leaf = token;
-          funcNode->right = nullptr;
-
-          funcNode->left = expressions.top();
-          expressions.pop();
+          expressions.push(new Node(token, nullptr, getPtrFromStack(expressions)));
         }
 
-        expressions.push(funcNode);
         continue;
       }
     }
 
     assert(("Incomplete/Invalid expression", expressions.size() == 1));
-    return expressions.top();
+    ast_ = expressions.top();
+  }
+
+  SyntaxTree::~SyntaxTree() 
+  { 
+    deleteAST(ast_);
   }
 
 
@@ -464,7 +472,6 @@ namespace MathEval {
         break;
     }
 
-    delete tree; // Node no longer needed free memory
     return isNegative ? -output : output;
   }
 
@@ -474,7 +481,7 @@ namespace MathEval {
     RPN rpnExp = tokenizer.buildRPN();
 
     SyntaxTree tree(rpnExp);
-    Node* ast = tree.buildSyntaxTree();
+    Node* ast = tree.getSyntaxTree();
 
     return evalSyntaxTree(ast);
   }
