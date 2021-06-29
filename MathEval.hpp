@@ -1,11 +1,11 @@
 #ifndef MATH_EVAL_HPP
 #define MATH_EVAL_HPP
 
+#include <unordered_map>
 #include <cassert>
 #include <vector>
 #include <cmath>
 #include <stack>
-#include <map>
 
 namespace MathEval {
   //
@@ -71,13 +71,13 @@ namespace MathEval {
   // Constants
   const char SPECIAL[] = { '+', '-', '*', '/', '(', ')', ' ', ',', '^', '%' };
 
-  const std::map<std::string, double> VARIABLES = {
+  const std::unordered_map<std::string, double> VARIABLES = {
     { "pi",  atan(1) * 4 },
     { "e" ,  exp(1)      },
     { "rc",  1729        }
   };
 
-  const std::map<std::string, OperatorExpr> OPERATORS = {
+  const std::unordered_map<std::string, OperatorExpr> OPERATORS = {
     { "+", { [](double a, double b) { return a + b;      }, 2, true  } },
     { "-", { [](double a, double b) { return a - b;      }, 2, true  } },
     { "*", { [](double a, double b) { return a * b;      }, 3, true  } },
@@ -86,12 +86,12 @@ namespace MathEval {
     { "^", { [](double a, double b) { return pow(a, b);  }, 4, false } }
   };
 
-  const std::map<std::string, pUnaryFunction> UNARY_FUNCTIONS = {
+  const std::unordered_map<std::string, pUnaryFunction> UNARY_FUNCTIONS = {
     { "sin", [](double a) { return sin(a); } },
     { "cos", [](double a) { return cos(a); } }
   };
 
-  const std::map<std::string, pBinaryFunction> BINARY_FUNCTIONS = {
+  const std::unordered_map<std::string, pBinaryFunction> BINARY_FUNCTIONS = {
     { "max", [](double a, double b) { return a > b ? a : b; } }
   };
 
