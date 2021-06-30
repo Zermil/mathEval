@@ -23,3 +23,8 @@ int main(int argc, char* argv[])
 > a.exe
 ```
 **Note:** Make sure negative function expressions are written as Ex. -> `"-cos(2.1)"` **NO SPACES!** between `'-'` and function expression, otherwise Tokenizer will treat it as "minus" sign/operator, same goes for negative numbers.
+
+## See also
+- [asl-calculator](https://github.com/aslze/asl-calculator)
+- [MathExpr](https://github.com/k3a/MathExpr)
+- [mathpresso](https://github.com/tartakynov/mathpresso)
