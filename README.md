@@ -26,5 +26,5 @@ int main(int argc, char* argv[])
 
 ## See also
 - [asl-calculator](https://github.com/aslze/asl-calculator)
-- [MathExpr](https://github.com/k3a/MathExpr)
+- [cparse](https://github.com/cparse/cparse)
 - [mathpresso](https://github.com/tartakynov/mathpresso)
