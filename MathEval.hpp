@@ -83,15 +83,14 @@ namespace MathEval {
     Node* ast_;
   };
 
-  // Constants
-  const char SPECIAL[] = { '+', '-', '*', '/', '(', ')', ' ', ',', '^', '%' };
-
+  // Constants, easy to add extra variables, functions or operators
   const std::unordered_map<std::string, double> VARIABLES = {
     { "pi",  atan(1) * 4 },
     { "e" ,  exp(1)      },
     { "rc",  1729        }
   };
 
+  // strings because of Token struct, convenience
   const std::unordered_map<std::string, OperatorExpr> OPERATORS = {
     { "+", { [](double a, double b) { return a + b;      }, 2, true  } },
     { "-", { [](double a, double b) { return a - b;      }, 2, true  } },
@@ -102,13 +101,17 @@ namespace MathEval {
   };
 
   const std::unordered_map<std::string, pUnaryFunction> UNARY_FUNCTIONS = {
-    { "sin", [](double a) { return sin(a); } },
-    { "cos", [](double a) { return cos(a); } }
+    { "sin",  [](double a) { return sin(a);  } },
+    { "cos",  [](double a) { return cos(a);  } },
+    { "sqrt", [](double a) { return sqrt(a); } }
   };
 
   const std::unordered_map<std::string, pBinaryFunction> BINARY_FUNCTIONS = {
     { "max", [](double a, double b) { return a > b ? a : b; } }
   };
+  
+  // Extra special characters that are checked alongside operators
+  const char SPECIAL[] = { '(', ')', ' ', ',' };
 
   // Functions (wrappers & utilities)
   bool isSpecial(const char c);
@@ -155,6 +158,12 @@ namespace MathEval {
 
   bool isSpecial(const char c)
   {
+    for (auto it = OPERATORS.begin(); it != OPERATORS.end(); ++it) {
+      if (it->first[0] == c) {
+        return true;
+      }
+    }
+
     for (const char& special : SPECIAL) {
       if (special == c) {
         return true;
@@ -434,11 +443,13 @@ namespace MathEval {
     }
 
     assert(("Incomplete/Invalid expression", expressions.size() == 1));
+
     ast_ = expressions.top();
+    expressions = std::stack<Node*>();
   }
 
   SyntaxTree::~SyntaxTree() 
-  { 
+  {
     deleteAST(ast_);
   }
 

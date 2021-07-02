@@ -13,7 +13,8 @@ int main(int argc, char* argv[])
     "-Pi + 3.2 - 4 + (-3 + 2)-E*3",
     "2.398+14.23+3-e*3+(-3)",
     ",-123,,+cos(-3)",
-    "-sin ( max ( 2, 3 ) / 3 * PI )"
+    "-sin ( max ( 2, 3 ) / 3 * PI )",
+    "-sqrt(2)"
   };
 
   for (const std::string& exp : EXPRESSIONS) {
