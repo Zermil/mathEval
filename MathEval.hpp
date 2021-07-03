@@ -41,19 +41,8 @@ namespace MathEval {
     Node* left;
     Node* right;
 
-    Node(Token val)
-    {
-      leaf = val;
-      left = nullptr;
-      right = nullptr;
-    }
-
-    Node(Token val, Node* pRight, Node* pLeft)
-    {
-      leaf = val;
-      right = pRight;
-      left = pLeft;
-    }
+    Node(Token val) : leaf(val), left(nullptr), right(nullptr) {}
+    Node(Token val, Node* pRight, Node* pLeft) : leaf(val), right(pRight), left(pLeft) {}
   };
 
   // Classes
@@ -123,7 +112,6 @@ namespace MathEval {
   bool isFunction(const std::string& s);
   std::string ltrim(const std::string& s);
   std::string toLower(const std::string& s);
-  Node* getPtrFromStack(std::stack<Node*>& stack);
   void deleteAST(Node* ast);
 
   double evalSyntaxTree(Node* tree);
@@ -227,14 +215,6 @@ namespace MathEval {
     double number = strtod(s.c_str(), &endPtr);
 
     return endPtr != s.c_str() && *endPtr == '\0' && number != HUGE_VAL;
-  }
-
-  Node* getPtrFromStack(std::stack<Node*>& stack)
-  {
-    Node* ptr = stack.top();
-    stack.pop();
-
-    return ptr;
   }
 
   void deleteAST(Node* ast)
@@ -424,7 +404,13 @@ namespace MathEval {
 
       if (token.type == TokenType::OPERATOR_TOKEN) {
         assert(("Incomplete/Invalid expression", expressions.size() >= 2));
-        expressions.push(new Node(token, getPtrFromStack(expressions), getPtrFromStack(expressions)));
+        Node* right = expressions.top();
+        expressions.pop();
+
+        Node* left = expressions.top();
+        expressions.pop();
+
+        expressions.push(new Node(token, right, left));
         
         continue;
       }
@@ -432,10 +418,19 @@ namespace MathEval {
       if (token.type == TokenType::FUNCTION_TOKEN) {
         if (isBinaryFunction(token.value) || isBinaryFunction(token.value.substr(1))) {
           assert(("Incomplete/Invalid expression", expressions.size() >= 2));
-          expressions.push(new Node(token, getPtrFromStack(expressions), getPtrFromStack(expressions)));
+          Node* right = expressions.top();
+          expressions.pop();
+
+          Node* left = expressions.top();
+          expressions.pop();
+
+          expressions.push(new Node(token, right, left));
         } else {
           assert(("Incomplete/Invalid expression", expressions.size() >= 1));
-          expressions.push(new Node(token, nullptr, getPtrFromStack(expressions)));
+          Node* left = expressions.top();
+          expressions.pop();
+
+          expressions.push(new Node(token, nullptr, left));
         }
 
         continue;
