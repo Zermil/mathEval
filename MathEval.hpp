@@ -79,14 +79,13 @@ namespace MathEval {
     { "rc",  1729        }
   };
 
-  // strings because of Token struct, convenience
-  const std::unordered_map<std::string, OperatorExpr> OPERATORS = {
-    { "+", { [](double a, double b) { return a + b;      }, 2, true  } },
-    { "-", { [](double a, double b) { return a - b;      }, 2, true  } },
-    { "*", { [](double a, double b) { return a * b;      }, 3, true  } },
-    { "/", { [](double a, double b) { return a / b;      }, 3, true  } },
-    { "%", { [](double a, double b) { return fmod(a, b); }, 3, true  } },
-    { "^", { [](double a, double b) { return pow(a, b);  }, 4, false } }
+  const std::unordered_map<char, OperatorExpr> OPERATORS = {
+    { '+', { [](double a, double b) { return a + b;      }, 2, true  } },
+    { '-', { [](double a, double b) { return a - b;      }, 2, true  } },
+    { '*', { [](double a, double b) { return a * b;      }, 3, true  } },
+    { '/', { [](double a, double b) { return a / b;      }, 3, true  } },
+    { '%', { [](double a, double b) { return fmod(a, b); }, 3, true  } },
+    { '^', { [](double a, double b) { return pow(a, b);  }, 4, false } }
   };
 
   const std::unordered_map<std::string, pUnaryFunction> UNARY_FUNCTIONS = {
@@ -103,8 +102,8 @@ namespace MathEval {
   const char SPECIAL[] = { '(', ')', ' ', ',' };
 
   // Functions (wrappers & utilities)
-  bool isSpecial(const char c);
-  bool isOperator(const std::string& s);
+  bool isSpecial(const char& c);
+  bool isOperator(const char& c);
   bool isVariable(const std::string& s);
   bool isNumber(const std::string& s);
   bool isUnaryFunction(const std::string& s);
@@ -144,10 +143,10 @@ namespace MathEval {
     return lowered;
   }
 
-  bool isSpecial(const char c)
+  bool isSpecial(const char& c)
   {
     for (auto it = OPERATORS.begin(); it != OPERATORS.end(); ++it) {
-      if (it->first[0] == c) {
+      if (it->first == c) {
         return true;
       }
     }
@@ -161,9 +160,9 @@ namespace MathEval {
     return false;
   }
 
-  bool isOperator(const std::string& s)
+  bool isOperator(const char& c)
   {
-    if (OPERATORS.find(s) == OPERATORS.end()) {
+    if (OPERATORS.find(c) == OPERATORS.end()) {
       return false;
     }
 
@@ -291,7 +290,7 @@ namespace MathEval {
       return TokenType::VARIABLE_TOKEN;
     }
 
-    if (isOperator(token)) {
+    if (token.length() == 1 && isOperator(token[0])) {
       return TokenType::OPERATOR_TOKEN;
     }
 
@@ -342,9 +341,9 @@ namespace MathEval {
         while (!operatorStack.empty() && operatorStack.top().type != TokenType::OPENB_TOKEN) {
 
           if (operatorStack.top().type == TokenType::OPERATOR_TOKEN) {
-            int topPrecedence = OPERATORS.at(operatorStack.top().value).precedence;
-            int tokenPrecedence = OPERATORS.at(token.value).precedence;
-            bool isLeftAssociative = OPERATORS.at(token.value).leftAssociative;
+            int topPrecedence = OPERATORS.at(operatorStack.top().value[0]).precedence;
+            int tokenPrecedence = OPERATORS.at(token.value[0]).precedence;
+            bool isLeftAssociative = OPERATORS.at(token.value[0]).leftAssociative;
 
             if (topPrecedence >= tokenPrecedence && isLeftAssociative) {
               exprQueue.push_back(operatorStack.top());
@@ -470,7 +469,7 @@ namespace MathEval {
         output = VARIABLES.at(leafValue);
         break;
       case TokenType::OPERATOR_TOKEN:
-        output = OPERATORS.at(leafValue).mathFunction(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right));
+        output = OPERATORS.at(leafValue[0]).mathFunction(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right));
         break;
       case TokenType::FUNCTION_TOKEN:
         if (isBinaryFunction(leafValue)) output = BINARY_FUNCTIONS.at(leafValue)(evalSyntaxTree(tree->left), evalSyntaxTree(tree->right));
