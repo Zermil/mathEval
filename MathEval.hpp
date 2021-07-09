@@ -48,7 +48,7 @@ namespace MathEval {
   // Classes
   class Tokenizer {
   public:
-    Tokenizer(std::string source) : source_(source) {}
+    Tokenizer(const std::string& source) : source_(source) {}
 
     RPN buildRPN();
 
@@ -63,10 +63,10 @@ namespace MathEval {
 
   class SyntaxTree {
   public:
-    SyntaxTree(RPN rpnExp);
+    SyntaxTree(const RPN& rpnExp);
     ~SyntaxTree();
 
-    Node* getSyntaxTree() { return ast_; }
+    inline Node* getSyntaxTree() const { return ast_; }
 
   private:
     Node* ast_;
@@ -390,7 +390,7 @@ namespace MathEval {
   //
   // SyntaxTree implementations
   //
-  SyntaxTree::SyntaxTree(RPN rpnExp)
+  SyntaxTree::SyntaxTree(const RPN& rpnExp)
   {
     std::stack<Node*> expressions;
 
