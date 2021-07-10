@@ -97,9 +97,9 @@ namespace MathEval {
   const std::unordered_map<std::string, pBinaryFunction> BINARY_FUNCTIONS = {
     { "max", [](double a, double b) { return a > b ? a : b; } }
   };
-  
+
   // Extra special characters that are checked alongside operators
-  const char SPECIAL[] = { '(', ')', ' ', ',' };
+  const char SPECIAL[] = { '(', ')', ' ', ',', '\n', '\t' };
 
   // Functions (wrappers & utilities)
   bool isSpecial(const char& c);
@@ -305,10 +305,8 @@ namespace MathEval {
     RPN tokens;
 
     for (std::string token = getNextToken(); token != ""; token = getNextToken()) {
-      // Ignore commas
-      if (token == ",") {
-        continue;
-      }
+      // Ignore commas, new lines and tabs
+      if (token == "," || token == "\n" || token == "\t") continue;
 
       TokenType type = getTokenType(token);
 
