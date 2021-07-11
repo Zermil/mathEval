@@ -99,7 +99,8 @@ namespace MathEval {
   };
 
   // Extra special characters that are checked alongside operators
-  const char SPECIAL[] = { '(', ')', ' ', ',', '\n', '\t' };
+  const char SPECIAL[] = { '(', ')', ' ', ',', '\n', '\t', '\r' };
+  const std::string IGNORE_TOKENS[] = { ",", "\n", "\t", "\r" };
 
   // Functions (wrappers & utilities)
   bool isSpecial(const char& c);
@@ -109,6 +110,7 @@ namespace MathEval {
   bool isUnaryFunction(const std::string& s);
   bool isBinaryFunction(const std::string& s);
   bool isFunction(const std::string& s);
+  bool isIgnorableToken(const std::string& s);
   std::string ltrim(const std::string& s);
   std::string toLower(const std::string& s);
   void deleteAST(Node* ast);
@@ -216,6 +218,17 @@ namespace MathEval {
     return endPtr != s.c_str() && *endPtr == '\0' && number != HUGE_VAL;
   }
 
+  bool isIgnorableToken(const std::string& s)
+  {
+    for (const std::string& token : IGNORE_TOKENS) {
+      if (token == s) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   void deleteAST(Node* ast)
   {
     if (ast == nullptr) return; 
@@ -306,7 +319,7 @@ namespace MathEval {
 
     for (std::string token = getNextToken(); token != ""; token = getNextToken()) {
       // Ignore commas, new lines and tabs
-      if (token == "," || token == "\n" || token == "\t") continue;
+      if (isIgnorableToken(token)) continue;
 
       TokenType type = getTokenType(token);
 
