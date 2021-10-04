@@ -1,4 +1,6 @@
 # MathEval
+**REMINDER: This thing is in need of some _major_ re-write**
+
 Single header "style" C++ library for evaluating simple mathematical expressions, allows for functions (positive and negative) like: `(max, cos, sin)` and constant variables like: `(pi, e)` as well as negative and decimal numbers, with an option to extend it with other, simple, variables and functions.
 
 ## Quick start
